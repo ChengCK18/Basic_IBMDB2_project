@@ -1,0 +1,283 @@
+Create database asgn
+Connect to asgn
+
+
+Create table Customer(Cust_ID varchar(10) not null,Cust_Name varchar(40),Cust_Phone varchar(15),Cust_State varchar(20),Cust_City varchar(20),Cust_Street varchar(50),Cust_Poscode varchar(10),Primary key(Cust_ID))
+
+Create table Employee(Emp_ID varchar(10) not null,Emp_Name varchar(40),Emp_Position varchar(20),Primary key(Emp_ID))
+
+Create table Invoice(Invoice_ID varchar(10) not null,Invoice_Date date,Invoice_TotalPrice decimal(7,2),Table_no int,Emp_ID varchar(10),Cust_ID varchar(10),Primary key(Invoice_ID),Foreign key(Emp_ID) references Employee,Foreign key(Cust_ID) references Customer)
+
+
+Create table Cuisine_Type(CType_ID varchar(10) not null,CTypeName varchar(20),Primary key(CType_ID))
+
+
+Create table Menu(Prod_ID varchar(10) not null,Prod_Name varchar(40),Prod_Type varchar(20),CType_ID varchar(10),Primary key(Prod_ID),Foreign key(CType_ID) references Cuisine_Type)
+
+Create table Product_Info(Prod_Info_ID varchar(10) not null,Prod_Info_Size char(1),Prod_Info_Price decimal(5,2),Prod_ID varchar(10),Primary key(Prod_Info_ID),Foreign key(Prod_ID) references Menu)
+
+
+
+Create table Invoice_Details(Details_ID varchar(10) not null,Details_Price decimal (7,2),Details_Qty int,Invoice_ID varchar(10),Prod_Info_ID varchar(10),Primary key(Details_ID),Foreign key(Invoice_ID) references Invoice,Foreign key(Prod_Info_ID) references Product_Info)
+
+-------------------------
+Trigger 1 (Syntax)
+-------------------------
+
+create trigger get_detailsPrice after insert on Invoice_Details referencing new as n for each row mode db2sql update Invoice_Details set Details_Price = (select Prod_Info_Price*Details_Qty from Product_Info,Invoice_Details where Product_Info.prod_info_ID=Invoice_details.prod_info_ID and Invoice_details.details_id=n.details_id ) where Invoice_Details.Details_ID= n.Details_ID 
+
+
+-------------------------
+Trigger 2 (Syntax)
+-------------------------
+
+create trigger get_detailsPriceUpd after update of Details_qty on Invoice_Details referencing new as n for each row mode db2sql update Invoice_Details set Details_Price = (select Prod_Info_Price*Details_Qty from Product_Info,Invoice_Details where Product_Info.prod_info_ID=Invoice_details.prod_info_ID and Invoice_details.details_id=n.details_id ) where Invoice_Details.Details_ID= n.Details_ID 
+
+-------------------------
+Trigger 3 (Syntax)
+-------------------------
+
+Create trigger inv_totalPriceUpd after update on Invoice_Details referencing new as n for each row mode db2sql update Invoice set Invoice_TotalPrice = (select sum(Details_Price) from Invoice_Details where Invoice_Details.Invoice_ID= n.Invoice_ID) where Invoice.Invoice_ID=n.Invoice_ID
+
+-------------------------
+Sub-Queries (Syntax)
+-------------------------
+Create trigger inv_totalPriceDel after delete on Invoice_Details referencing old as o for each row mode db2sql update Invoice set Invoice_TotalPrice = (select sum(Details_Price) from Invoice_Details where Invoice_Details.Invoice_ID= o.Invoice_ID) where Invoice.Invoice_ID=o.Invoice_ID
+
+
+-------------------------
+Aggregate function (Syntax)
+-------------------------
+
+Create trigger inv_totalPriceIns after insert on Invoice_Details referencing new as n for each row mode db2sql update Invoice set Invoice_TotalPrice = (select sum(Details_Price) from Invoice_Details where Invoice_Details.Invoice_ID= n.Invoice_ID) where Invoice.Invoice_ID=n.Invoice_ID
+
+-------------------------
+Group by and having (Syntax)
+-------------------------
+Create view regularcust(Cust_Name,Num_Visit) as select cust_name,count(*) from Invoice, Customer where Invoice.Cust_ID=Customer.Cust_ID group by cust_Name having count(*)>5
+
+-------------------------
+Stored Procedure(Syntax)
+-------------------------
+Create procedure check_details(in dID varchar(10),price decimal(5,2),Qty int,iID varchar(10),Pid varchar(10))begin if pID not in(select prod_info_id from invoice_details where invoice_details.Invoice_ID=iID) then insert into Invoice_details values(dID,Price,Qty,iID,pID);else Signal sqlstate '75001' set message_text='Cannot enter existing products into same invoices';end if;end
+
+
+-------------------------
+View(Syntax)
+-------------------------
+Create view topdish(Prod_info_ID,number) as select Prod_Info_ID,sum(details_qty) from Invoice_Details group by prod_info_id
+
+-------------------------
+Query not covered 1(Syntax)
+-------------------------
+Select Prod_name, prod_info_size, number from menu, product_info, topdish where menu.prod_ID = product_info.prod_ID and product_info.prod_info_id = topdish.prod_info_ID order by number desc fetch first 3 rows only
+
+
+-------------------------
+Query not covered 1(Syntax)
+-------------------------
+Select Prod_name, prod_info_size, number from menu, product_info, topdish where menu.prod_ID = product_info.prod_ID and product_info.prod_info_id = topdish.prod_info_ID order by number asc limit 3
+
+
+-------------------------
+Value Insertion Query(Customer)
+-------------------------
+insert into Customer values('CUST0001','John Philips','0114724586','Selangor','Kuala Lumpur', 'Jalan Mahmud','68100')
+insert into Customer values ('CUST0002','Jacob Henderson','0178996734','Pulau Pinang','Georgetown', 'Jalan Brother James','107450')
+insert into Customer values ('CUST0003','Hong Zhe Yean','0183459870','Kedah','Sungai Petani', 'Jalan Clover 6','433575')
+insert into Customer values('CUST0004','Lim Yiaw Hoong','0127778780','Selangor','Batu Caves', 'Jalan Ehsan','25077')
+insert into Customer values('CUST0005','Muhammad Fitri bin Kamarudin','0134531298', 'Kelantan', 'Bachok District', 'Jalan Pantai Aman','56080')
+insert into Customer values('CUST0006','Muhammad Firzani bin Fauzi','0165739855', 'Selangor', 'Klang', 'Jalan Goh Hock Huat','41400')
+insert into Customer values('CUST0007','Somraaj a/l Muthu','0182213455','Pulau Pinang', 'Bayan Lepas', 'Lebuh Sungai Ara 1','11900')
+insert into Customer values('CUST0008','Nancy Flowers','0124548886','Pulau Pinang','Gelugor','Jalan Permai','11700')
+insert into Customer values('CUST0009','Vignesh Varqa','0138907890','Selangor','Puchong', 'Persiaran Kewajipan','47600')
+insert into Customer values('CUST0010','Muhammad Shazwan bin Rosli','0187734590', 'Johor', 'Senai', 'Jalan Murni 12','81400')
+insert into Customer values('CUST0011','Soganraaj a/l Muniandy','0128890456','Johor', 'Muar', 'Jalan Sungai Abong','84000')
+insert into Customer values('CUST0012','Christopher Nolan','0164557890', 'Pulau Pinang', 'Georgetown', 'Jalan Gurney Drive','10470')
+insert into Customer values('CUST0013','Leonard Ng','0139906566','Pulau Pinang', 'Bayan Lepas', 'Pintasan Kenari','11900')
+insert into Customer values('CUST0014','Daryl Cheah','0182215580','Selangor','Kapar', 'Jalan Mohammad Ikram','45600')
+insert into Customer values('CUST0015','Muhammad Afiq bin Ali','0145368877', 'Kelantan', 'Kuala Krai', 'Jalan Mutiara','18050')
+insert into Customer values('CUST0016', 'Muhammad Aminah binti Samsudin','0128904561','Pahang','Kuantan','Jalan Sungai Lembing','28000')
+insert into Customer values('CUST0017','Yasmin Yacob','0168984572','Negeri Sembilan', 'Gemas', 'Jalan DS 3','73400')
+insert into Customer values('CUST0018','George Lucas','0136722385','Perlis','Kangar', 'Persiaran Jubli Emas','01000')
+
+
+
+-------------------------
+Value Insertion Query(Employee)
+-------------------------
+Insert into Employee values ('EMP0001','Waylon Dalton', 'Manager')
+Insert into Employee values ('EMP0002','Teng Hock Lian', 'Excutive Chef')
+Insert into Employee values ('EMP0003','Mary Jane', 'Sous Chef')
+Insert into Employee values ('EMP0004','Muhammad Mohktar bin Khairi','Pastry Chef')
+Insert into Employee values ('EMP0005','Somendiran a/l Muniandy','Soup and sauce Cook')
+Insert into Employee values ('EMP0006','James Lee', 'Sous Chef')
+Insert into Employee values ('EMP0007','Taro Misaki','Sous Chef')
+Insert into Employee values ('EMP0008','Robin Dubos', 'Fry Cook')
+Insert into Employee values ('EMP0009','Hew Choon Yen', 'Broiler Cook')
+Insert into Employee values ('EMP0010','Dmitri Oleksander','Kitchen Manager')
+Insert into Employee values ('EMP0011','Mohammad Taufik bin Umar','Waiter')
+Insert into Employee values ('EMP0012','Hong Ming Kean','Waiter')
+Insert into Employee values ('EMP0013','Lee Hui Yin','Waiter')
+Insert into Employee values ('EMP0014','Frank Masson','Waiter')
+Insert into Employee values ('EMP0015','Muhammad Khadija binti Omar','Waiter')
+
+
+-------------------------
+Value Insertion Query(Cuisine_Type)
+-------------------------
+
+insert into Cuisine_Type values('CT0001','American')
+insert into Cuisine_Type values('CT0002','British')
+insert into Cuisine_Type values('CT0003','Carribean')
+insert into Cuisine_Type values('CT0004','Chinese')
+insert into Cuisine_Type values('CT0005','French')
+insert into Cuisine_Type values('CT0006','Greek')
+insert into Cuisine_Type values('CT0007','Indian')
+insert into Cuisine_Type values('CT0008','Italian')
+insert into Cuisine_Type values('CT0009','Japanese')
+insert into Cuisine_Type values('CT0010','Malaysian')
+insert into Cuisine_Type values('CT0011','Mediterranean')
+insert into Cuisine_Type values('CT0012','Mexican')
+insert into Cuisine_Type values('CT0013','Spanish')
+insert into Cuisine_Type values('CT0014','Thai')
+insert into Cuisine_Type values('CT0015','Turkish')
+insert into Cuisine_Type values('CT0016','Vietnamese' )
+
+
+-------------------------
+Value Insertion Query(Menu)
+-------------------------
+insert into Menu values('P0001','Rum Punch','Beverage','CT0003')
+insert into Menu values('P0002','Roast lamb with spring herbs crumbs','Food','CT0002')
+insert into Menu values('P0003','British pork cassoulet','Food','CT0002')
+insert into Menu values('P0004','Nasi Lemak','Food','CT0010')
+insert into Menu values('P0005','Teh Tarik','Beverage','CT0010')
+insert into Menu values('P0006','Ambra and Sour Plum Juice','Beverage','CT0010')
+insert into Menu values('P0007','Beef Rendang','Food','CT0010')
+insert into Menu values('P0008','Fish head curry','Food','CT0010')
+insert into Menu values('P0009','Key lime pie','Desert','CT0001')
+insert into Menu values('P0010','Sticky ribs with roast potato salad','Food','CT0001')
+insert into Menu values('P0011','All-American T-bone','Food','CT0001')
+insert into Menu values('P0012','Fish tacos with Baja sauce','Food','CT0012')
+insert into Menu values('P0013','Michelada','Beverage','CT0012')
+insert into Menu values('P0014','Miso Soup','Food','CT0009')
+insert into Menu values('P0015','Katsu pork with sticky rice','Food','CT0009')
+insert into Menu values('P0016','Green tea frozen yogurt with sesame','Desert','CT0009')
+insert into Menu values('P0017','White chocolate creme brulee','Desert','CT0005')
+insert into Menu values('P0018','Citron Presse','Beverage','CT0005')
+
+
+-------------------------
+Value Insertion Query(Product_Info)
+-------------------------
+Insert into product_info values('PI0001','R','10.00','P0001')
+Insert into product_info values('PI0002','L','15.00','P0001')
+Insert into product_info values('PI0003','R','25.00','P0002')
+Insert into product_info values('PI0004','L','32.00','P0002')
+Insert into product_info values('PI0005','R','26.00','P0003')
+Insert into product_info values('PI0006','L','32.00','P0003')
+Insert into product_info values('PI0007','R','13.50','P0004')
+Insert into product_info values('PI0008','L','16.00','P0004')
+Insert into product_info values('PI0009','R','8.00','P0005')
+Insert into product_info values('PI0010','L','10.00','P0005')
+Insert into product_info values('PI0011','R','11.00','P0006')
+Insert into product_info values('PI0012','L','13.50','P0006')
+Insert into product_info values('PI0013','R','24.50','P0007')
+Insert into product_info values('PI0014','L','31.50','P0007')
+Insert into product_info values('PI0015','R','35.00','P0008')
+Insert into product_info values('PI0016','L','42.00','P0008')
+Insert into product_info values('PI0017','R','23.50','P0009')
+Insert into product_info values('PI0018','L','30.00','P0009')
+Insert into product_info values('PI0019','R','36.00','P0010')
+Insert into product_info values('PI0020','L','42.00','P0010')
+Insert into product_info values('PI0021','R','40.00','P0011')
+Insert into product_info values('PI0022','L','50.00','P0011')
+Insert into product_info values('PI0023','R','23.50','P0012')
+Insert into product_info values('PI0024','L','30.00','P0012')
+Insert into product_info values('PI0025','R','17.00','P0013')
+Insert into product_info values('PI0026','L','20.00','P0013')
+Insert into product_info values('PI0027','R','12.50','P0014')
+Insert into product_info values('PI0028','L','14.50','P0014')
+Insert into product_info values('PI0029','R','24.00','P0015')
+Insert into product_info values('PI0030','L','28.00','P0015')
+Insert into product_info values('PI0031','R','16.00','P0016')
+Insert into product_info values('PI0032','L','20.00','P0016')
+Insert into product_info values('PI0033','R','23.00','P0017')
+Insert into product_info values('PI0034','L','26.50','P0017')
+Insert into product_info values('PI0035','R','12.00','P0018')
+Insert into product_info values('PI0036','L','15.50','P0018')
+
+
+-------------------------
+Value Insertion Query(Invoice)
+-------------------------
+
+Insert into invoice values ('INV0001','2017-12-23',0,2,'EMP0011','CUST0001')
+Insert into invoice values ('INV0002','2017-12-23',0,3,'EMP0012','CUST0002')
+Insert into invoice values ('INV0003','2017-12-23',0,1,'EMP0015','CUST0003')
+Insert into invoice values ('INV0004','2017-12-23',0,4,'EMP0011','CUST0004')
+Insert into invoice values ('INV0005','2017-12-23',0,6,'EMP0014','CUST0005')
+Insert into invoice values ('INV0006','2017-12-23',0,2,'EMP0013','CUST0006')
+Insert into invoice values ('INV0007','2017-12-24',0,1,'EMP0013','CUST0007')
+Insert into invoice values ('INV0008','2017-12-24',0,3,'EMP0014','CUST0002')
+Insert into invoice values ('INV0009','2017-12-24',0,2,'EMP0011','CUST0008')
+Insert into invoice values ('INV0010','2017-12-24',0,5,'EMP0014','CUST0009')
+Insert into invoice values ('INV0011','2017-12-24',0,6,'EMP0015','CUST0001')
+Insert into invoice values ('INV0012','2017-12-24',0,8,'EMP0013','CUST0010')
+Insert into invoice values ('INV0013','2017-12-24',0,7,'EMP0012','CUST0011')
+Insert into invoice values ('INV0014','2017-12-24',0,3,'EMP0011','CUST0012')
+Insert into invoice values ('INV0015','2017-12-24',0,1,'EMP0014','CUST0013')
+Insert into invoice values ('INV0016','2017-12-26',0,2,'EMP0011','CUST0004')
+Insert into invoice values ('INV0017','2017-12-26',0,1,'EMP0015','CUST0009')
+Insert into invoice values ('INV0018','2017-12-26',0,7,'EMP0014','CUST0014')
+Insert into invoice values ('INV0019','2017-12-26',0, 5,'EMP0011','CUST0015')
+Insert into invoice values ('INV0020','2017-12-26',0, 2,'EMP0012','CUST0016')
+Insert into invoice values ('INV0021','2017-12-26',0, 6,'EMP0013','CUST0017')
+Insert into invoice values ('INV0022','2017-12-26',0, 6,'EMP0015','CUST0001')
+Insert into invoice values ('INV0023','2017-12-26',0, 4,'EMP0014','CUST0009')
+Insert into invoice values ('INV0024','2017-12-26',0, 3,'EMP0012','CUST0010')
+Insert into invoice values ('INV0025','2017-12-26',0, 2,'EMP0013','CUST0018')
+
+
+-------------------------
+Value Insertion Query(Invoice_Details)
+-------------------------
+Call check_details('DET0001',0,2,'INV0001','PI0002')
+Call check_details('DET0002',0,1,'INV0001','PI0009')
+Call check_details('DET0003',0,3,'INV0002','PI0002')
+Call check_details('DET0004',0,1,'INV0002','PI0003')
+Call check_details('DET0005',0,2,'INV0003','PI0007')
+Call check_details('DET0006',0,4,'INV0004','PI0030')
+Call check_details('DET0007',0,2,'INV0005','PI0033')
+Call check_details('DET0008',0,1,'INV0005','PI0022')
+Call check_details('DET0009',0,2,'INV0006','PI0024')
+Call check_details('DET0010',0,3,'INV0007','PI0019')
+Call check_details('DET0011',0,5,'INV0008','PI0035')
+Call check_details('DET0012',0,5,'INV0008','PI0004')
+Call check_details('DET0013',0,2,'INV0009','PI0028')
+Call check_details('DET0014',0,2,'INV0010','PI0015')
+Call check_details('DET0015',0,3,'INV0011','PI0032')
+Call check_details('DET0016',0,1,'INV0011','PI0022')
+Call check_details('DET0017',0,3,'INV0012','PI0013')
+Call check_details('DET0018',0,6,'INV0013','PI0030')
+Call check_details('DET0019',0,2,'INV0014','PI0018')
+Call check_details('DET0020',0,2,'INV0015','PI0012')
+Call check_details('DET0021',0,2,'INV0015','PI0019')
+Call check_details('DET0022',0,1,'INV0016','PI0010')
+Call check_details('DET0023',0,1,'INV0016','PI0003')
+Call check_details('DET0024',0,2,'INV0017','PI0008')
+Call check_details('DET0025',0,3,'INV0018','PI0024')
+Call check_details('DET0026',0,5,'INV0019','PI0031')
+Call check_details('DET0027',0,5,'INV0019','PI0013')
+Call check_details('DET0028',0,1,'INV0020','PI0028')
+Call check_details('DET0029',0,1,'INV0020','PI0030')
+Call check_details('DET0030',0,7,'INV0021','PI0015')
+Call check_details('DET0031',0,2,'INV0022','PI0033')
+Call check_details('DET0032',0,7,'INV0023','PI0018')
+Call check_details('DET0033',0,2,'INV0023','PI0004')
+Call check_details('DET0034',0,8,'INV0024','PI0022')
+Call check_details('DET0035',0,7,'INV0024','PI0002')
+Call check_details('DET0036',0,10,'INV0025','PI0022')
+Call check_details('DET0037',0,10,'INV0025','PI0033')
+
