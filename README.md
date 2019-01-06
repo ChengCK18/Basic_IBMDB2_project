@@ -9,7 +9,7 @@ It is recommended that you use the lastest version of db2 to avoid errors.
 The order in which the triggers are created is VERY
 important as the order in which it excutes depends on the order
 it is created.The order are as follows:
-<b>
+<br>
 
 1)Trigger 1(get_detailsPrice)
 2)Trigger 2(get_detailsPriceUpd)
