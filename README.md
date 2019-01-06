@@ -1,5 +1,6 @@
-# Basic_IBMDB2_project
+# Basic_IBMDB2_project_Food_Ordering_System
 
+This database is designed for a Food Ordering System
 Included are queries to reconstruct the database and a report.
 This database is created on IBM DB2.
 
