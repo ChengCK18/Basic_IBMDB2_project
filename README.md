@@ -12,6 +12,7 @@ it is created.The order are as follows:
 <br>
 
 1)Trigger 1(get_detailsPrice)
+<br>
 2)Trigger 2(get_detailsPriceUpd)
 3)Trigger 3(inv_totalPriceUPD)
 4)Sub queries(inv_totalPriceDel)
