@@ -1,7 +1,7 @@
-# Basic_IBMDB2_project_Food_Ordering_System
+# basic_IBM_DB2_command_project_food_ordering_system
 
 This is a group of 2 school project.
-This database is designed with Food Ordering System in mind.
+The objective of this project is to design a ibm db2 database with food ordering system in mind.
 Included are queries to reconstruct the database and a report.
 This database is created on IBM DB2.It is recommended that you use the lastest version of db2 to avoid errors.
 
