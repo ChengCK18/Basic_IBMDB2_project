@@ -1,4 +1,4 @@
-# basic_IBM_DB2_command_project_food_ordering_system
+# basic-IBM-DB2-command-project-food-ordering-system
 
 This is a group of 2 school project.
 The objective of this project is to design a ibm db2 database with food ordering system in mind.
